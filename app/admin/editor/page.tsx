@@ -54,9 +54,9 @@ const getCachedEditorGames = unstable_cache(
   { revalidate: 3600, tags: ["editor-games"] }
 );
 
-export default async function EditorPage() {
-  // Por defecto mostramos la letra "A"
-  const letraUrl = "A";
+export default async function EditorPage({ searchParams }: { searchParams: { letra?: string } }) {
+  // Extrae la letra de searchParams, por defecto "A"
+  const letraUrl = searchParams?.letra || "A";
 
   // 🔥 OPTIMIZADO: Ahora con cache dinamico por letra
   const gamesList = await getCachedEditorGames(letraUrl);

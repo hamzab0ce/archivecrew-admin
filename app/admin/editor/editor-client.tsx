@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { updateGame, deleteGame } from '@/app/actions/editor-actions';
 import { 
   Trash2, Save, Gamepad2, Plus, X, Search as SearchIcon, 
@@ -56,6 +56,10 @@ function translateRawgRequirements(rawText: string | null | undefined): string |
 
 export default function EditorClient({ initialGames, letraActual }: { initialGames: any[], letraActual: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Sincroniza la letra local con la URL
+  const [currentLetra, setCurrentLetra] = useState<string>(letraActual);
   const [games, setGames] = useState(initialGames);
   const [selectedGame, setSelectedGame] = useState<any>(null);
   const [search, setSearch] = useState('');
@@ -76,6 +80,11 @@ export default function EditorClient({ initialGames, letraActual }: { initialGam
   const [creditSource, setCreditSource] = useState(""); 
   const [password, setPassword] = useState("");
   const [links, setLinks] = useState<any[]>([]); 
+
+  // Sincroniza currentLetra con letraActual cuando cambia (desde el servidor)
+  useEffect(() => {
+    setCurrentLetra(letraActual);
+  }, [letraActual]);
 
   useEffect(() => {
     setGames(initialGames);
@@ -179,7 +188,7 @@ export default function EditorClient({ initialGames, letraActual }: { initialGam
   const handleLinkChange = (index: number, key: string, value: string) => { const newLinks = [...links]; newLinks[index] = { ...newLinks[index], [key]: value }; setLinks(newLinks); };
   const addLink = () => setLinks([...links, { label: "NUEVO LINK", link: "", type: "MAIN" }]);
   const removeLink = (index: number) => setLinks(links.filter((_, i) => i !== index));
-  const handleCambiarLetra = (letra: string) => { if (letra === letraActual) return; setIsChangingLetter(true); setSelectedGame(null); router.push(`?letra=${letra}`); };
+  const handleCambiarLetra = (letra: string) => { if (letra === currentLetra) return; setIsChangingLetter(true); setSelectedGame(null); router.push(`?letra=${letra}`); };
   async function handleDelete() { if (!selectedGame) return; if (window.confirm(`¿Borrar "${selectedGame.title}"?`)) { setLoading(true); const res = await deleteGame(selectedGame.id); if (res.success) { setGames(games.filter(g => g.id !== selectedGame.id)); setSelectedGame(null); } setLoading(false); } }
 
   const filteredGames = games.filter(g => g.title.toLowerCase().includes(search.toLowerCase()));
@@ -192,12 +201,12 @@ export default function EditorClient({ initialGames, letraActual }: { initialGam
         <div className="p-4 border-b border-[#dfb4b9]/40 bg-white flex flex-col gap-3">
           <div className="flex overflow-x-auto custom-scrollbar pb-1 gap-1">
             {ABECEDARIO.map(letra => (
-              <button key={letra} onClick={() => handleCambiarLetra(letra)} className={`shrink-0 w-6 h-6 rounded flex items-center justify-center text-[10px] font-black transition-all ${letraActual === letra ? 'bg-[#9b62a6] text-white shadow-sm' : 'bg-[#f8f5f5] text-[#a87ca0] hover:bg-[#e8c4df] border border-transparent hover:border-[#dfb4b9]'}`}>{letra}</button>
+              <button key={letra} onClick={() => handleCambiarLetra(letra)} className={`shrink-0 w-6 h-6 rounded flex items-center justify-center text-[10px] font-black transition-all ${currentLetra === letra ? 'bg-[#9b62a6] text-white shadow-sm' : 'bg-[#f8f5f5] text-[#a87ca0] hover:bg-[#e8c4df] border border-transparent hover:border-[#dfb4b9]'}`}>{letra}</button>
             ))}
           </div>
           <div className="relative group">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a87ca0]" />
-            <input type="text" placeholder={`Buscar en ${letraActual}...`} className={`w-full bg-white border border-[#c47b98] rounded-xl pl-9 pr-3 py-2 text-xs font-bold ${theme.textMain} placeholder-[#a87ca0] focus:outline-none focus:ring-1 focus:ring-[#dfb4b9] shadow-sm`} onChange={(e) => setSearch(e.target.value)} />
+            <input type="text" placeholder={`Buscar en ${currentLetra}...`} className={`w-full bg-white border border-[#c47b98] rounded-xl pl-9 pr-3 py-2 text-xs font-bold ${theme.textMain} placeholder-[#a87ca0] focus:outline-none focus:ring-1 focus:ring-[#dfb4b9] shadow-sm`} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </div>
 
