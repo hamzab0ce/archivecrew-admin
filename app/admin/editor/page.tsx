@@ -5,9 +5,12 @@ import { or, like, eq } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic';
 
-export default async function EditorPage({ searchParams }: { searchParams: { letra?: string } }) {
-  // Extrae la letra de searchParams, por defecto "A"
-  const letraUrl = searchParams?.letra || "A";
+// 🔥 FÍJATE AQUÍ: searchParams ahora es un Promise en Next.js nuevo
+export default async function EditorPage({ searchParams }: { searchParams: Promise<{ letra?: string }> }) {
+  
+  // 👇 AQUÍ ESTÁ EL MILAGRO: Hay que ponerle 'await' o ignorará la URL
+  const params = await searchParams;
+  const letraUrl = params?.letra || "A";
 
   let whereCondition;
   if (letraUrl === "#") {
@@ -17,7 +20,7 @@ export default async function EditorPage({ searchParams }: { searchParams: { let
     whereCondition = like(games.title, `${letraUrl}%`);
   }
 
-  // 🔥 Traer juegos DIRECTAMENTE de la base de datos sin cachés raras
+  // Traer juegos DIRECTAMENTE de la base de datos
   const gamesList = await db.select({
     id: games.id,
     title: games.title,
