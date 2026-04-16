@@ -1,5 +1,5 @@
-// 1. EL JURAMENTO ESTÁTICO (Descomentado y en modo force-static)
-export const dynamic = 'force-static';
+// 1. EL JURAMENTO DINÁMICO: Necesita ejecutarse en request time con datos reales
+export const dynamic = 'force-dynamic';
 
 import { MetadataRoute } from 'next';
 import { db } from '@/lib/db';

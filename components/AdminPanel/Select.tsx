@@ -2,7 +2,6 @@
 
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
-import CheckBoxCustomized from "../Home/Filters/CheckBoxCustomized";
 
 export default function Select({ name, options, handleChange, selectedOption }: {
   name: string
@@ -26,7 +25,13 @@ export default function Select({ name, options, handleChange, selectedOption }: 
       key={option}
       className="flex items-center group text-zinc-300 p-2 gap-2 h-10"
     >
-      <CheckBoxCustomized value={option} onChange={() => handleChange(option)} name={name.toLowerCase()} isActive={selectedOption.includes(option)}  />
+      <input
+        type="checkbox"
+        checked={selectedOption.includes(option)}
+        onChange={() => handleChange(option)}
+        name={name.toLowerCase()}
+        className="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-purple-500 cursor-pointer"
+      />
       {option}
     </label>
   ));

@@ -1,12 +1,14 @@
-import { useSearchStore } from "@/stores/filterStore";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export function useFilters() {
-  const selected = useSearchStore((state) => state.selectedPlatforms);
-  const setSelected = useSearchStore((state) => state.setSelectedPlatforms);
+  const [selected, setSelected] = useState<string[]>([]);
   const handleChange = (platform: string) => {
-    setSelected(platform);
+    setSelected(prev => 
+      prev.includes(platform) 
+        ? prev.filter(p => p !== platform)
+        : [...prev, platform]
+    );
   };
 
   const searchParams = useSearchParams();

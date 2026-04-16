@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { ArrowLeft, Megaphone, Trash2, CalendarDays } from 'lucide-react';
 import { desc, eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 // 🔥 CACHEAR las noticias para el admin
 const getCachedNews = unstable_cache(
   async () => {

@@ -4,6 +4,8 @@ import EditorClient from './editor-client'
 import { or, like } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache'
 
+export const dynamic = 'force-dynamic';
+
 // 🔥 CACHEAR las busquedas del editor por letra
 const getCachedEditorGames = unstable_cache(
   async (letraUrl: string) => {
