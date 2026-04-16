@@ -1,7 +1,10 @@
 import { db } from "@/lib/db";
-import { games, linksDescarga, gamesGenres } from "@/lib/schema";
+import { games, linksDescarga, gamesGenres, news } from "@/lib/schema"; // 🔥 Añadimos 'news' aquí
 import { createGameSchema } from "@/lib/validators/game";
 import { NextRequest, NextResponse } from "next/server";
+
+// 🔥 TU WEBHOOK DIRECTO DE CLOUDFLARE
+const CF_WEBHOOK = "https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/956a24bd-f0e1-4c7d-9ac7-2a051bdbda4c";
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,7 +35,7 @@ export async function POST(req: NextRequest) {
       fileSize: fileSize || null,
       version: version || null,
       creditSource: creditSource || null,
-      reqMinimos: reqMinimos || null, // ← ¡AÑADIDO!
+      reqMinimos: reqMinimos || null,
     };
 
     // Validación con Zod
@@ -98,6 +101,20 @@ export async function POST(req: NextRequest) {
           }))
         );
       }
+
+      // 🌟 AUTO-NOTICIA AL CREAR JUEGO
+      try {
+        await db.insert(news).values({
+          title: `🎮 ¡Nuevo juego disponible: ${title}!`,
+          content: `Hemos subido **${title}** para la plataforma ${platform}. ¡Ya puedes ir a la sección de descargas!`,
+          type: 'game'
+        });
+      } catch (e) {
+        console.error("Fallo al crear la auto-noticia:", e);
+      }
+
+      // 🚀 AVISAR A CLOUDFLARE PARA REDEPLOY
+      fetch(CF_WEBHOOK, { method: 'POST' }).catch(console.error);
     }
 
     return NextResponse.json({ error: null });

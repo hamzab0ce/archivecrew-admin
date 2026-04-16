@@ -8,7 +8,9 @@ import { desc, eq } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
-// 🔥 CACHEAR las noticias para el admin
+// 🔥 TU WEBHOOK DIRECTO
+const CF_WEBHOOK = "https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/956a24bd-f0e1-4c7d-9ac7-2a051bdbda4c";
+
 const getCachedNews = unstable_cache(
   async () => {
     return await db.select().from(news).orderBy(desc(news.createdAt));
@@ -18,10 +20,8 @@ const getCachedNews = unstable_cache(
 );
 
 export default async function NewsAdminPage() {
-  // 1. Obtenemos las noticias con caché de 1 hora
   const allNews = await getCachedNews();
 
-  // 2. Server Action: Crear Noticia
   async function createNews(formData: FormData) {
     'use server';
     const title = formData.get("title") as string;
@@ -32,12 +32,13 @@ export default async function NewsAdminPage() {
 
     await db.insert(news).values({ title, content, type });
     
-    // Recargamos esta página y la principal
+    // 🚀 AVISAR A CLOUDFLARE
+    fetch(CF_WEBHOOK, { method: 'POST' }).catch(console.error);
+
     revalidatePath("/admin/news");
     revalidatePath("/");
   }
 
-  // 3. Server Action: Borrar Noticia
   async function deleteNews(formData: FormData) {
     'use server';
     const id = parseInt(formData.get("id") as string);
@@ -46,11 +47,13 @@ export default async function NewsAdminPage() {
 
     await db.delete(news).where(eq(news.id, id));
 
+    // 🚀 AVISAR A CLOUDFLARE
+    fetch(CF_WEBHOOK, { method: 'POST' }).catch(console.error);
+
     revalidatePath("/admin/news");
     revalidatePath("/");
   }
 
-  // Helper para pintar el icono según el tipo
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'game': return '🎮';
@@ -158,7 +161,6 @@ export default async function NewsAdminPage() {
                     </p>
                   </div>
                   
-                  {/* Formulario invisible para poder usar el botón de borrar */}
                   <form action={deleteNews}>
                     <input type="hidden" name="id" value={n.id} />
                     <button 
