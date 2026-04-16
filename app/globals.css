@@ -1,0 +1,49 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --font-montserrat: "Montserrat Variable", sans-serif;
+  
+  /* PALETA CLARA (Estilo ArchiveCrew de tu imagen) */
+  --color-background: #F4EEF2;    /* Fondo general claro/crema */
+  --color-surface: #E8D5E1;       /* Fondo de las cajas, paneles y menú (rosa pastel) */
+  --color-border: #C8A8C0;        /* Bordes sutiles en lila */
+  --color-text-primary: #2B1A2C;  /* Texto oscuro (casi negro con toque morado) para buena lectura */
+  --color-text-secundary: #5D4360;/* Textos secundarios y subtítulos */
+  
+  /* Colores de acento */
+  --color-accent: #9A659F;        /* Morado fuerte para botones y detalles importantes */
+  --color-accent-2: #C18FB6;      /* Rosa/morado intermedio para hover o degradados */
+
+  :where(.dark) {
+    /* MODO OSCURO (Conservando la base que habías empezado) */
+    --color-background: #1a0a2e;
+    --color-surface: #2d1b4e;
+    --color-border: #4c1d95;
+    --color-text-primary: #ffffff;
+    --color-text-secundary: #bbbbbb;
+    --color-accent: #d946ef;
+    --color-accent-2: #8b5cf6;
+  }
+}
+
+@theme inline {
+  --color-secundary: var(--color-text-secundary);
+  --color-primary: var(--color-text-primary);
+  --font-sans: var(--font-montserrat);
+  --color-border: var(--color-border);
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-accent: var(--color-accent);
+  --color-accent-2: var(--color-accent-2);
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

@@ -1,0 +1,22 @@
+export const GAME_GENRES = [
+  "Acción",
+  "Aventura",
+  "RPG",
+  "Estrategia",
+  "Deportes",
+  "Carreras",
+  "Simulación",
+  "Terror",
+  "Shooter (FPS)",
+  "Puzle",
+  "Plataformas",
+  "Lucha",
+  "Supervivencia",
+  "Mundo Abierto",
+  "Sigilo",
+  "Arcade",
+  "Novela Visual",
+  "Indie",
+  "Favorito",
+  "Otros"
+];
