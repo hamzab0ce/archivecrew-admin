@@ -58,8 +58,8 @@ export default function EditorClient({ initialGames, letraActual }: { initialGam
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // Sincroniza la letra local con la URL
-  const [currentLetra, setCurrentLetra] = useState<string>(letraActual);
+  // 🔥 Sincronizar con la URL directamente - no usar useState para la letra
+  const currentLetra = searchParams.get('letra') || letraActual;
   const [games, setGames] = useState(initialGames);
   const [selectedGame, setSelectedGame] = useState<any>(null);
   const [search, setSearch] = useState('');
@@ -81,15 +81,11 @@ export default function EditorClient({ initialGames, letraActual }: { initialGam
   const [password, setPassword] = useState("");
   const [links, setLinks] = useState<any[]>([]); 
 
-  // Sincroniza currentLetra con letraActual cuando cambia (desde el servidor)
-  useEffect(() => {
-    setCurrentLetra(letraActual);
-  }, [letraActual]);
-
+  // Sincroniza los juegos cuando cambia la URL (letra) o las props iniciales
   useEffect(() => {
     setGames(initialGames);
     setIsChangingLetter(false);
-  }, [initialGames]);
+  }, [initialGames, searchParams.get('letra')]);
 
   useEffect(() => {
     if (selectedGame) {

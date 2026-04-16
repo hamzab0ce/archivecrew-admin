@@ -6,7 +6,7 @@ import { unstable_cache } from 'next/cache'
 
 export const dynamic = 'force-dynamic';
 
-// 🔥 CACHEAR las busquedas del editor por letra
+// 🔥 CACHEAR las busquedas del editor por letra (clave dinámica por letra)
 const getCachedEditorGames = unstable_cache(
   async (letraUrl: string) => {
     let whereCondition;
@@ -50,7 +50,7 @@ const getCachedEditorGames = unstable_cache(
 
     return enrichedGames;
   },
-  ["editor-games"],
+  ["editor-games", "letra"], // 🔑 Clave dinámica - se invalida cuando cambia la letra
   { revalidate: 3600, tags: ["editor-games"] }
 );
 
