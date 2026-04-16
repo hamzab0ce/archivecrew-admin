@@ -23,7 +23,7 @@ export default async function NewsAdminPage() {
 
   // 2. Server Action: Crear Noticia
   async function createNews(formData: FormData) {
-    //"use server";
+    'use server';
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
     const type = formData.get("type") as string;
@@ -39,7 +39,7 @@ export default async function NewsAdminPage() {
 
   // 3. Server Action: Borrar Noticia
   async function deleteNews(formData: FormData) {
-    //"use server";
+    'use server';
     const id = parseInt(formData.get("id") as string);
     
     if (!id) return;
