@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
-import { games } from '@/lib/schema'
+import { games, linksDescarga, gamesGenres } from '@/lib/schema'
 import EditorClient from './editor-client'
-import { or, like } from 'drizzle-orm'
+import { or, like, eq } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache'
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,8 @@ const getCachedEditorGames = unstable_cache(
       whereCondition = like(games.title, `${letraUrl}%`);
     }
 
-    let query = db.select({
+    // Traer juegos con la condición
+    const gamesList = await db.select({
       id: games.id,
       title: games.title,
       cover_url: games.cover_url,
@@ -25,14 +26,29 @@ const getCachedEditorGames = unstable_cache(
       content: games.content,        
       platform: games.platform,
       requeriments: games.requeriments,
+      reqMinimos: games.reqMinimos,
       fileSize: games.fileSize,
       version: games.version,
       creditSource: games.creditSource,
       password: games.password,
       instructions: games.instructions,
-    }).from(games).where(whereCondition);
+    }).from(games).where(whereCondition).orderBy(games.title);
 
-    return await query.orderBy(games.title);
+    // Enriquecer cada juego con sus links y géneros
+    const enrichedGames = await Promise.all(
+      gamesList.map(async (game) => {
+        const links = await db.select().from(linksDescarga).where(eq(linksDescarga.juego_id, game.id));
+        const genres = await db.select().from(gamesGenres).where(eq(gamesGenres.game_id, game.id));
+        
+        return {
+          ...game,
+          links_descarga: links,
+          games_genres: genres
+        };
+      })
+    );
+
+    return enrichedGames;
   },
   ["editor-games"],
   { revalidate: 3600, tags: ["editor-games"] }
