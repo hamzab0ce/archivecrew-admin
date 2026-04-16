@@ -1,14 +1,11 @@
 "use client"
 
-// import loginAction from "@/app/actions/login"; // 🔥 DESCONECTADO PARA STATIC EXPORT
+import { useActionState } from "react";
+import loginAction from "@/app/actions/login";
 import { Lock, User, KeyRound, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
-  // const [state, action, pending] = useActionState(loginAction, undefined); // 🔥 DESCONECTADO
-  
-  // 🔥 FALLBACK ESTÁTICO PARA EXPORT
-  const action = (formData: FormData) => { console.log("Login deshabilitado en static export"); };
-  const pending = false;
+  const [state, action, pending] = useActionState(loginAction, undefined);
 
   return (
     <form
@@ -77,7 +74,13 @@ export default function LoginPage() {
       </button>
 
       {/* Alerta de Error */}
-      {/* El login está deshabilitado en export estático, no mostramos errores de servidor */}
+      {state?.error && (
+        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+          <p className="text-xs text-red-700 font-semibold text-center">
+            {state.error}
+          </p>
+        </div>
+      )}
     </form>
   );
 }
