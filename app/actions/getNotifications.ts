@@ -1,3 +1,5 @@
+'use server';
+
 import { db } from "@/lib/db";
 import { games, news } from "@/lib/schema";
 import { desc } from "drizzle-orm";

@@ -1,4 +1,4 @@
-import Login from "@/components/_Admin/Login";
+import Login from "@/components/AdminPanel/Login";
 
 export default function Admin() {
   return (

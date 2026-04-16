@@ -1,4 +1,5 @@
-//"use server";
+'use server';
+
 import { generateAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";

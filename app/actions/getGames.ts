@@ -1,4 +1,4 @@
-//"use server";
+'use server';
 
 import { ITEMS_PER_PAGE } from "@/const/itemPerPage";
 import { db } from "@/lib/db";

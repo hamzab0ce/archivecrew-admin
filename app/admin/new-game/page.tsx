@@ -1,4 +1,4 @@
-import NewGameForm from "@/components/_Admin/NewGame";
+import NewGameForm from "@/components/AdminPanel/NewGame";
 
 export default function NewGamePage() {
   return (

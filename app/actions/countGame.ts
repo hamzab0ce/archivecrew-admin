@@ -1,4 +1,5 @@
-//"use server"
+'use server';
+
 import { db } from "@/lib/db";
 import { games } from "@/lib/schema";
 import { count } from "drizzle-orm";

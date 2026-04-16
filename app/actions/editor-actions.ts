@@ -1,5 +1,4 @@
-// app/actions/editor-actions.ts
-//'use server'
+'use server';
 
 import { db } from '@/lib/db'
 import { games, linksDescarga, gamesGenres } from '@/lib/schema'
