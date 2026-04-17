@@ -31,15 +31,16 @@ export async function middleware(request: NextRequest) {
 
   // 3. LÓGICA ESTRICTA DE REDIRECCIÓN (PANEL PRIVADO)
   
-  // Si NO estás logueado y no estás ya en la pantalla de login (/admin)...
-  if (!isAuth && path !== '/admin') {
-    const response = NextResponse.redirect(new URL("/admin", request.url));
+  // 🔥 CORREGIDO: Si NO estás logueado y no estás ya en la pantalla secreta (/hq-access)...
+  if (!isAuth && path !== '/hq-access') {
+    const response = NextResponse.redirect(new URL("/hq-access", request.url));
     response.cookies.delete("access_token"); // Borra token por si estaba caducado
     return response;
   }
 
-  // Si SÍ estás logueado y vas a la pantalla de login o la raíz...
-  if (isAuth && (path === '/admin' || path === '/')) {
+  // 🔥 CORREGIDO: Si SÍ estás logueado y vas a la pantalla de login o la raíz...
+  // Te manda directo a tu panel de control (/panel)
+  if (isAuth && (path === '/hq-access' || path === '/')) {
     return NextResponse.redirect(new URL("/panel", request.url));
   }
 
