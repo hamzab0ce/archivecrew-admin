@@ -44,14 +44,21 @@ export async function updateGame(id: number, formData: FormData) {
     if (linksRaw) linksList = JSON.parse(linksRaw);
   } catch (e) { console.error("Error parseando enlaces", e); }
 
-  // 🔥 ESCUDO ANTI-BORRADO
-  // Si no llegan links, cortamos el proceso. JAMÁS borrará tu BD por error.
   if (linksList.length === 0) {
     return { success: false, message: '❌ Error: No se pueden guardar juegos sin enlaces.' };
   }
 
-  const genresRaw = formData.get('genres') as string;
-  const genresList = genresRaw ? genresRaw.split(',').map(g => g.trim()).filter(Boolean) : [];
+  const rawGenres = formData.getAll('genres');
+  let genresList: string[] = [];
+  
+  if (rawGenres.length > 0) {
+    genresList = rawGenres.flatMap(g => g.toString().split(',')).map(g => g.trim()).filter(Boolean);
+  } else {
+    const singleGenreRaw = formData.get('genres') as string;
+    if (singleGenreRaw) {
+      genresList = singleGenreRaw.split(',').map(g => g.trim()).filter(Boolean);
+    }
+  }
 
   try {
     await db.update(games).set({
@@ -63,16 +70,28 @@ export async function updateGame(id: number, formData: FormData) {
     }).where(eq(games.id, id));
 
     await db.delete(linksDescarga).where(eq(linksDescarga.juego_id, id));
+    
+    // 🔥 INSERCIÓN BLINDADA EXACTAMENTE COMO TU BD REQUIERE
     await db.insert(linksDescarga).values(
-      linksList.map((link) => ({
-        juego_id: id, link: link.link, label: link.label || 'LINK',
-        type: (link.label || '').toUpperCase().includes('DIRECTO') ? 'MAIN' : 'MIRROR'
-      }))
+      linksList.map((link, index) => {
+        let finalUrl = link.link.trim();
+        if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+          finalUrl = `https://${finalUrl}`;
+        }
+
+        return {
+          juego_id: id, 
+          link: finalUrl, 
+          label: index === 0 ? 'Directo' : `Mirror ${index}`, 
+          type: index === 0 ? 'MAIN' : 'MIRROR'
+        };
+      })
     );
 
     await db.delete(gamesGenres).where(eq(gamesGenres.game_id, id));
     if (genresList.length > 0) {
-      await db.insert(gamesGenres).values(genresList.map((g) => ({ game_id: id, genre: g })));
+      const uniqueGenres = Array.from(new Set(genresList));
+      await db.insert(gamesGenres).values(uniqueGenres.map((g) => ({ game_id: id, genre: g })));
     }
     
     if (isAdmin) fetch(CF_WEBHOOK, { method: 'POST' }).catch(console.error);

@@ -62,10 +62,10 @@ export default function EditorClient({ initialGames, letraActual, isAdmin }: { i
       setSize(selectedGame.fileSize || ""); setVersion(selectedGame.version || ""); setPassword(selectedGame.password || "");
       setCreditSource(selectedGame.creditSource || ""); setDescription(selectedGame.content || ""); setInstructions(selectedGame.instructions || "");
       
-      // 🔥 LA SOLUCIÓN AL FALLO 1: Ahora busca ambos formatos para evitar borrar los links
       setLinks(selectedGame.links_descarga || selectedGame.linksDescarga || []);
+      
       const genresSource = selectedGame.games_genres || selectedGame.gamesGenres || [];
-      setSelectedGenres(genresSource.map((g: any) => g.genre).filter(Boolean));
+      setSelectedGenres(genresSource.map((g: any) => g.genre ? g.genre.toUpperCase() : "").filter(Boolean));
     }
   }, [selectedGame]);
 
@@ -98,7 +98,9 @@ export default function EditorClient({ initialGames, letraActual, isAdmin }: { i
 
   const toggleGenre = (genre: string) => setSelectedGenres((prev) => prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre]);
   const handleLinkChange = (index: number, key: string, value: string) => { const newLinks = [...links]; newLinks[index] = { ...newLinks[index], [key]: value }; setLinks(newLinks); };
-  const addLink = () => setLinks([...links, { label: "NUEVO LINK", link: "", type: "MAIN" }]);
+  
+  // 🔥 Solo añade un link vacío, el backend le pondrá nombre y tipo mágicamente
+  const addLink = () => setLinks([...links, { link: "" }]);
   const removeLink = (index: number) => setLinks(links.filter((_, i) => i !== index));
   const handleCambiarLetra = (letra: string) => { if (letra === currentLetra) return; setIsChangingLetter(true); setSelectedGame(null); router.push(`?letra=${letra}`); };
   async function handleDelete() { if (!selectedGame) return; if (window.confirm(`¿Borrar "${selectedGame.title}" permanentemente?`)) { setLoading(true); const res = await deleteGame(selectedGame.id); if (res.success) { setGames(games.filter(g => g.id !== selectedGame.id)); setSelectedGame(null); toast.success("Borrado!"); } else { toast.error(res.message); } setLoading(false); } }
@@ -138,7 +140,38 @@ export default function EditorClient({ initialGames, letraActual, isAdmin }: { i
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-start"><div><ThemedPillSelector label="Géneros" options={EXACT_GENRES} selected={selectedGenres} onChange={toggleGenre} isMultiple /></div><div><ThemedPillSelector label="Categoría Recursos" options={["Bajos", "Medios", "Altos"]} selected={requeriments} onChange={setRequirements} /></div></div>
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 bg-[#f8f5f5] p-5 rounded-2xl border border-[#dfb4b9]/30"><div className="space-y-4"><div><div className="flex justify-between items-center mb-2"><label className={`text-[10px] font-black ${theme.textMuted} uppercase tracking-widest`}>Portada (Grid)</label><button type="button" onClick={handleSearchCover} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase bg-[#e8c4df] text-[#2d1b30] hover:bg-[#dfb4b9] transition-all shadow-sm"><Search size={12}/> Buscar Grids</button></div><div className="flex gap-2"><div className="w-12 h-16 bg-white rounded-lg border overflow-hidden shrink-0 shadow-sm">{coverUrl && <img src={coverUrl} className="w-full h-full object-cover" />}</div><input className={`flex-1 ${theme.bgApp} p-3 rounded-xl text-xs outline-none ${theme.textMain} font-mono shadow-inner`} value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} /></div></div><div><div className="flex justify-between items-center mb-2"><label className={`text-[10px] font-black ${theme.textMuted} uppercase tracking-widest`}>Fondo (Hero)</label><button type="button" onClick={handleSearchCaptura} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase bg-[#e8c4df] text-[#2d1b30] hover:bg-[#dfb4b9] transition-all shadow-sm"><Search size={12}/> Buscar Heroes</button></div><div className="flex gap-2"><div className="w-20 h-12 bg-white rounded-lg border overflow-hidden shrink-0 shadow-sm">{captura && <img src={captura} className="w-full h-full object-cover" />}</div><input className={`flex-1 ${theme.bgApp} p-3 rounded-xl text-xs outline-none ${theme.textMain} font-mono shadow-inner`} value={captura} onChange={(e) => setCaptura(e.target.value)} /></div></div></div><div className="space-y-4"><InputField label="Contraseña" value={password} onChange={(e:any) => setPassword(e.target.value)} /><InputField label="Fuente / Créditos" value={creditSource} onChange={(e:any) => setCreditSource(e.target.value)} required /></div></div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><div className="flex justify-between items-center mb-2"><label className={`text-[11px] font-black ${theme.textMuted} uppercase tracking-widest`}>Descripción</label><button type="button" onClick={handleFetchWikipedia} className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all shadow-md bg-[#c47b98] text-white hover:bg-[#b06a87]"><BookOpen size={14}/> Extraer Wikipedia</button></div><textarea rows={6} value={description} onChange={(e) => setDescription(e.target.value)} required className={`w-full ${theme.bgApp} border border-transparent focus:${theme.border} p-4 rounded-2xl text-xs outline-none ${theme.textMain} resize-y shadow-inner leading-relaxed`} /></div><div><label className={`text-[11px] font-black ${theme.textMuted} uppercase tracking-widest mb-1.5 block`}>Instrucciones</label><textarea rows={6} value={instructions} onChange={(e) => setInstructions(e.target.value)} required className={`w-full ${theme.bgApp} border border-transparent focus:${theme.border} p-4 rounded-2xl text-xs outline-none ${theme.textMain} font-mono resize-y shadow-inner`} /></div></div>
-              <div className="border border-[#dfb4b9]/50 rounded-2xl p-5 bg-white"><div className="flex justify-between items-center mb-4"><label className={`text-[11px] font-black ${theme.textMuted} uppercase tracking-widest`}>Enlaces de Descarga</label><button type="button" onClick={addLink} className={`px-4 py-2 ${theme.btnPink} rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-all`}><Plus size={14} /> Añadir Link</button></div><div className="space-y-2">{links.map((link: any, index: number) => (<div key={index} className="flex gap-2 items-center"><input type="text" value={link.label} onChange={(e) => handleLinkChange(index, 'label', e.target.value)} className="bg-[#f8f5f5] text-[#9b62a6] font-black uppercase text-[10px] rounded-lg px-3 py-2.5 w-32 border outline-none text-center shadow-sm" /><input type="text" value={link.link} onChange={(e) => handleLinkChange(index, 'link', e.target.value)} className={`flex-1 ${theme.bgApp} text-[#2d1b30] text-xs rounded-lg px-3 py-2.5 border outline-none font-mono shadow-inner`} /><button type="button" onClick={() => removeLink(index)} className="bg-red-50 hover:bg-red-500 text-red-400 hover:text-white p-2.5 rounded-lg transition-colors shadow-sm"><X size={16} /></button></div>))}</div></div>
+              <div className="border border-[#dfb4b9]/50 rounded-2xl p-5 bg-white">
+                <div className="flex justify-between items-center mb-4">
+                  <label className={`text-[11px] font-black ${theme.textMuted} uppercase tracking-widest`}>Enlaces de Descarga</label>
+                  <button type="button" onClick={addLink} className={`px-4 py-2 ${theme.btnPink} rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-2 hover:scale-105 active:scale-95 transition-all`}><Plus size={14} /> Añadir Link</button>
+                </div>
+                
+                {/* 🔥 LA ETIQUETA FIJA: No se puede editar el texto para que no la lien */}
+                <div className="space-y-3">
+                  {links.map((link: any, index: number) => (
+                    <div key={index} className="flex gap-2 items-center bg-[#f8f5f5] p-2 rounded-xl border border-[#dfb4b9]/30">
+                      
+                      <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg text-white whitespace-nowrap ${index === 0 ? 'bg-[#9b62a6] shadow-sm' : 'bg-[#dfb4b9]'}`}>
+                        {index === 0 ? 'Directo' : `Mirror ${index}`}
+                      </span>
+                      
+                      <input 
+                        type="text" 
+                        value={link.link || ''} 
+                        placeholder="Pega la URL aquí (https://...)" 
+                        onChange={(e) => handleLinkChange(index, 'link', e.target.value)} 
+                        className={`flex-1 ${theme.bgApp} text-[#2d1b30] text-xs rounded-lg px-3 py-2 border outline-none font-mono shadow-inner`} 
+                      />
+                      
+                      <button type="button" onClick={() => removeLink(index)} className="bg-red-50 hover:bg-red-500 text-red-400 hover:text-white p-2 rounded-lg transition-colors shadow-sm">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                  {links.length === 0 && <p className="text-center text-xs text-red-400 font-bold py-2 uppercase tracking-widest">Añade al menos un enlace para poder guardar</p>}
+                </div>
+
+              </div>
             </div>
           </form>
         ) : (<div className="w-full h-full flex flex-col items-center justify-center text-[#c47b98] opacity-40"><Gamepad2 className="w-20 h-20 mb-4" /><h2 className="text-xl font-black uppercase tracking-widest">Selecciona un juego</h2></div>)}
