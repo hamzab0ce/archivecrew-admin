@@ -143,12 +143,12 @@ export default async function MisAportesPage() {
                   {/* Link a la web si ya está aprobado */}
                   {juego.status === 'approved' && (
                     <Link 
-                      href={`https://tuwebprincipal.com/game/${juego.slug}`} /* <-- Asegúrate de que esta URL sea la correcta de tu web pública */
-                      target="_blank"
-                      className="p-3 bg-white border border-[#dfb4b9]/50 text-[#a87ca0] hover:text-[#9b62a6] rounded-2xl transition-colors h-fit"
-                    >
-                      <ExternalLink size={20} />
-                    </Link>
+  href={`https://archivecrew.xyz/game/${juego.slug}/${juego.id}`} 
+  target="_blank"
+  className="p-3 bg-white border border-[#dfb4b9]/50 text-[#a87ca0] hover:text-[#9b62a6] rounded-2xl transition-colors h-fit"
+>
+  <ExternalLink size={20} />
+</Link>
                   )}
                 </div>
               </div>
