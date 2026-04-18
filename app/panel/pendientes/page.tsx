@@ -1,20 +1,13 @@
 import { db } from "@/lib/db";
 import { games } from "@/lib/schema";
-import { eq, desc, and, gte } from "drizzle-orm"; // 🔥 Añadimos 'and' y 'gte' (mayor o igual)
+import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
 import { ArrowLeft, Check, X, Eye, User, Calendar } from "lucide-react";
 import { approveGame, rejectGame } from "@/app/actions/admin-actions";
 
 export default async function PendientesPage() {
-  // 🔥 LA FECHA DE CORTE: 18 de Abril de 2026 (Hora 00:00)
-  const fechaCorte = new Date('2026-04-18T00:00:00Z');
-
-  // Buscamos solo los que están esperando revisión Y son nuevos
   const pendientes = await db.query.games.findMany({
-    where: and(
-      eq(games.status, 'pending'),
-      gte(games.createdAt, fechaCorte) // 🚀 Solo de la fecha de corte en adelante
-    ),
+    where: eq(games.status, 'pending'),
     orderBy: [desc(games.createdAt)],
   });
 
@@ -54,14 +47,24 @@ export default async function PendientesPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  {/* Ver detalles (Corregido para ir a tu buscador de letras) */}
-                  <Link href={`/panel/editor?letra=${juego.title.charAt(0).toUpperCase()}`} className="p-3 bg-gray-100 text-gray-600 rounded-2xl hover:bg-[#9b62a6] hover:text-white transition-all shadow-sm">
+                  {/* Botón Detalles */}
+                  <Link href={`/panel/editor?letra=${juego.title.charAt(0).toUpperCase()}&gameId=${juego.id}`} className="p-3 bg-gray-100 text-gray-600 rounded-2xl hover:bg-[#9b62a6] hover:text-white transition-all shadow-sm">
                     <Eye size={20} />
                   </Link>
 
-                  {/* Botón Rechazar */}
-                  <form action={async () => { "use server"; await rejectGame(juego.id); }}>
-                    <button className="p-3 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-500 hover:text-white transition-all shadow-sm">
+                  {/* 🔥 Botón Rechazar CON INPUT DE MOTIVO */}
+                  <form action={async (formData) => { 
+                    "use server"; 
+                    await rejectGame(juego.id, formData); 
+                  }} className="flex items-center gap-2">
+                    <input 
+                      type="text" 
+                      name="reason" 
+                      placeholder="Motivo de rechazo..." 
+                      required 
+                      className="text-[10px] p-3 rounded-2xl border border-rose-200 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400 bg-rose-50/50 text-rose-700 w-32 md:w-48 placeholder-rose-300 font-bold uppercase tracking-widest shadow-inner transition-all"
+                    />
+                    <button type="submit" title="Rechazar" className="p-3 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-500 hover:text-white transition-all shadow-sm">
                       <X size={20} />
                     </button>
                   </form>

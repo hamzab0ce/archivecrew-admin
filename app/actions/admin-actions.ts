@@ -11,6 +11,7 @@ export async function approveGame(id: number) {
   try {
     await db.update(games).set({ 
       status: 'approved',
+      rejectReason: null, // Limpiamos el motivo por si antes fue rechazado
       updatedAt: new Date() 
     }).where(eq(games.id, id));
 
@@ -25,10 +26,14 @@ export async function approveGame(id: number) {
   }
 }
 
-export async function rejectGame(id: number) {
+// 🔥 AHORA RECIBE EL FORMDATA PARA GUARDAR EL MOTIVO
+export async function rejectGame(id: number, formData: FormData) {
+  const reason = formData.get('reason') as string || 'Rechazado sin motivo específico.';
+
   try {
     await db.update(games).set({ 
       status: 'rejected',
+      rejectReason: reason, // 🔥 Guardamos el texto escrito en el panel
       updatedAt: new Date() 
     }).where(eq(games.id, id));
 

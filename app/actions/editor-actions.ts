@@ -10,23 +10,27 @@ import { decodeJwt } from 'jose'
 // 🔥 TU WEBHOOK DIRECTO
 const CF_WEBHOOK = "https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/956a24bd-f0e1-4c7d-9ac7-2a051bdbda4c";
 
-// 🕵️‍♂️ FUNCIÓN PARA LEER EL PASE VIP
-async function getUserRole() {
+// 🕵️‍♂️ FUNCIÓN PARA LEER EL PASE VIP Y EL NOMBRE
+async function getUserData() {
   const cookieStore = await cookies();
   const token = cookieStore.get("access_token")?.value;
-  if (!token) return 'helper';
+  if (!token) return { role: 'helper', username: 'Anonimo' };
   
   try {
     const decoded = decodeJwt(token);
-    return decoded.role as string;
+    return { 
+      role: decoded.role as string, 
+      username: decoded.username as string 
+    };
   } catch (e) {
-    return 'helper';
+    return { role: 'helper', username: 'Anonimo' };
   }
 }
 
 // 1. ACTUALIZAR JUEGO
 export async function updateGame(id: number, formData: FormData) {
-  const role = await getUserRole();
+  // Sacamos rol y nombre
+  const { role, username } = await getUserData();
   const isAdmin = role === 'admin';
 
   const title = formData.get('title') as string
@@ -59,8 +63,8 @@ export async function updateGame(id: number, formData: FormData) {
       fileSize, version, password, creditSource, instructions, updatedAt: new Date(),
       
       // 🔥 LA MAGIA ESTÁ AQUÍ:
-      // Si eres tú, se guarda aprobado. Si es Benslay, vuelve al Limbo para revisión.
-      status: isAdmin ? 'approved' : 'pending' 
+      status: isAdmin ? 'approved' : 'pending',
+      uploader: username // 🚀 AHORA SÍ: Guarda quién lo ha modificado
     }).where(eq(games.id, id))
 
     await db.delete(linksDescarga).where(eq(linksDescarga.juego_id, id))
@@ -104,7 +108,7 @@ export async function updateGame(id: number, formData: FormData) {
 // 2. BORRAR JUEGO
 export async function deleteGame(id: number) {
   // 🛡️ ESCUDO DE SEGURIDAD: Solo tú puedes borrar
-  const role = await getUserRole();
+  const { role } = await getUserData();
   if (role !== 'admin') {
     return { success: false, message: '❌ ACCESO DENEGADO: Solo el administrador Supremo puede borrar juegos.' }
   }

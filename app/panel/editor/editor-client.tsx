@@ -28,7 +28,6 @@ const EXACT_GENRES = [
 const PLATFORMS = ["PC", "ANDROID"];
 const ABECEDARIO = ["#", "A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
 
-// --- DICCIONARIO TRADUCTOR ---
 function translateRawgRequirements(rawText: string | null | undefined): string | null {
   if (!rawText) return null;
   let translated = rawText.replace(/Minimum:/gi, '').replace(/Recommended:/gi, '').replace(/<[^>]*>?/gm, '');
@@ -54,12 +53,13 @@ function translateRawgRequirements(rawText: string | null | undefined): string |
   return translated.replace(/\n\s*\n/g, '\n').trim();
 }
 
-// 🔥 AHORA RECIBE EL isAdmin
 export default function EditorClient({ initialGames, letraActual, isAdmin }: { initialGames: any[], letraActual: string, isAdmin: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
   const currentLetra = searchParams.get('letra') || letraActual;
+  const gameIdParam = searchParams.get('gameId'); // 🔥 LEEMOS LA ID DE LA URL
+
   const [games, setGames] = useState(initialGames);
   const [selectedGame, setSelectedGame] = useState<any>(null);
   const [search, setSearch] = useState('');
@@ -84,7 +84,15 @@ export default function EditorClient({ initialGames, letraActual, isAdmin }: { i
   useEffect(() => {
     setGames(initialGames);
     setIsChangingLetter(false);
-  }, [initialGames, searchParams.get('letra')]);
+
+    // 🔥 SI HAY UN ID EN LA URL, LO ABRIMOS DIRECTAMENTE
+    if (gameIdParam) {
+      const gameToSelect = initialGames.find(g => g.id === Number(gameIdParam));
+      if (gameToSelect) {
+        setSelectedGame(gameToSelect);
+      }
+    }
+  }, [initialGames, searchParams.get('letra'), gameIdParam]);
 
   useEffect(() => {
     if (selectedGame) {
@@ -175,10 +183,8 @@ export default function EditorClient({ initialGames, letraActual, isAdmin }: { i
     if (res.success) {
       toast.success(res.message);
       if (isAdmin) {
-        // Solo actualizamos la lista si eres admin y se publica directo
         setGames(games.map(g => g.id === selectedGame.id ? { ...g, title, cover_url: coverUrl, platform } : g));
       } else {
-        // Si es ayudante, limpiamos el panel para que busque el siguiente
         setSelectedGame(null);
       }
     } else toast.error(res.message);
@@ -231,35 +237,21 @@ export default function EditorClient({ initialGames, letraActual, isAdmin }: { i
             <div className="flex justify-between items-center px-6 py-4 border-b border-[#dfb4b9]/40 bg-[#f8f5f5] shrink-0">
               <div className="flex items-center gap-4 truncate">
                 <h2 className={`text-xl font-black ${theme.textMain} truncate uppercase tracking-tight flex items-center gap-2`}>✏️ {title || 'Editando...'}</h2>
-                
-                {/* 🔥 LA ETIQUETA COOL DE ROL */}
                 {isAdmin ? (
-                  <span className="hidden md:flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[9px] font-black tracking-widest border border-emerald-200">
-                    <ShieldCheck size={12} /> MODO DIOS (PUBLICACIÓN DIRECTA)
-                  </span>
+                  <span className="hidden md:flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[9px] font-black tracking-widest border border-emerald-200"><ShieldCheck size={12} /> MODO DIOS (PUBLICACIÓN DIRECTA)</span>
                 ) : (
-                  <span className="hidden md:flex items-center gap-1 bg-amber-100 text-amber-700 px-2 py-1 rounded text-[9px] font-black tracking-widest border border-amber-200">
-                    <ShieldAlert size={12} /> MODO AYUDANTE (REQUIERE REVISIÓN)
-                  </span>
+                  <span className="hidden md:flex items-center gap-1 bg-amber-100 text-amber-700 px-2 py-1 rounded text-[9px] font-black tracking-widest border border-amber-200"><ShieldAlert size={12} /> MODO AYUDANTE (REQUIERE REVISIÓN)</span>
                 )}
               </div>
               
               <div className="flex gap-3 shrink-0">
-                {/* 🔥 EL BOTÓN DE BORRAR SE ESCONDE MÁGICAMENTE */}
                 {isAdmin && (
                   <button type="button" onClick={handleDelete} disabled={loading} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1.5 shadow-sm">
                     <Trash2 className="w-3.5 h-3.5" /> Borrar
                   </button>
                 )}
-                
-                {/* 🔥 EL BOTÓN DE GUARDAR CAMBIA SEGÚN QUIÉN ERES */}
                 <button type="submit" disabled={loading} className={`px-5 py-2 ${theme.btnPurple} rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-1.5`}>
-                  {loading ? 'Procesando...' : (
-                    <>
-                      <Save className="w-3.5 h-3.5" /> 
-                      {isAdmin ? 'Guardar Cambios' : 'Enviar a Revisión'}
-                    </>
-                  )}
+                  {loading ? 'Procesando...' : <><Save className="w-3.5 h-3.5" /> {isAdmin ? 'Guardar Cambios' : 'Enviar a Revisión'}</>}
                 </button>
               </div>
             </div>
