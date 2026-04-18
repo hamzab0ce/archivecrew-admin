@@ -11,11 +11,11 @@ export async function approveGame(id: number) {
   try {
     await db.update(games).set({ 
       status: 'approved',
-      rejectReason: null, // Limpiamos el motivo por si antes fue rechazado
+      rejectReason: null,
       updatedAt: new Date() 
     }).where(eq(games.id, id));
 
-    // 🚀 IMPORTANTE: Al aprobar, reconstruimos la web pública
+    // Despliega los cambios a todo el mundo
     fetch(CF_WEBHOOK, { method: 'POST' }).catch(console.error);
 
     revalidatePath('/panel/pendientes');
@@ -26,14 +26,13 @@ export async function approveGame(id: number) {
   }
 }
 
-// 🔥 AHORA RECIBE EL FORMDATA PARA GUARDAR EL MOTIVO
 export async function rejectGame(id: number, formData: FormData) {
   const reason = formData.get('reason') as string || 'Rechazado sin motivo específico.';
 
   try {
     await db.update(games).set({ 
       status: 'rejected',
-      rejectReason: reason, // 🔥 Guardamos el texto escrito en el panel
+      rejectReason: reason,
       updatedAt: new Date() 
     }).where(eq(games.id, id));
 
