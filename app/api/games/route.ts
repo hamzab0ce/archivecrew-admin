@@ -1,29 +1,47 @@
 import { db } from "@/lib/db";
-import { games, linksDescarga, gamesGenres, news } from "@/lib/schema"; // 🔥 Añadimos 'news' aquí
+import { games, linksDescarga, gamesGenres, news } from "@/lib/schema";
 import { createGameSchema } from "@/lib/validators/game";
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { decodeJwt } from "jose";
 
-// 🔥 TU WEBHOOK DIRECTO DE CLOUDFLARE
 const CF_WEBHOOK = "https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/956a24bd-f0e1-4c7d-9ac7-2a051bdbda4c";
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
+    // 🕵️‍♂️ 1. LEEMOS EL PASE VIP PARA SABER QUIÉN ES
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+    
+    let role = "helper"; 
+    let uploaderName = "Agente";
 
+    if (token) {
+      try {
+        const decoded = decodeJwt(token);
+        role = decoded.role as string;
+        uploaderName = decoded.username as string;
+      } catch (e) {
+        console.error("Error leyendo token en la subida");
+      }
+    }
+
+    const isAdmin = role === "admin";
+    // 🔥 Si es admin, se aprueba directo. Si es ayudante, se va al limbo.
+    const gameStatus = isAdmin ? "approved" : "pending";
+
+    // 2. RECUPERAMOS LOS DATOS DEL FORMULARIO
+    const formData = await req.formData();
     const rawGenres = formData.get("genres") as string;
     const genres = rawGenres.split(",").map((genre) => genre.trim());
     
-    // 1. RECUPERAMOS LOS CAMPOS
     const password = formData.get("password") as string | null;
     const instructions = formData.get("instructions") as string | null;
     const captura = formData.get("captura") as string | null;
     const fileSize = formData.get("fileSize") as string | null;
     const version = formData.get("version") as string | null;
     const creditSource = formData.get("creditSource") as string | null;
-    
-    // --- NUEVO CAMPO DE REQUISITOS LARGOS ---
     const reqMinimos = formData.get("reqMinimos") as string | null; 
-    // ----------------------------------------
 
     const rawData = {
       ...Object.fromEntries(formData),
@@ -38,7 +56,6 @@ export async function POST(req: NextRequest) {
       reqMinimos: reqMinimos || null,
     };
 
-    // Validación con Zod
     const parsed = createGameSchema.safeParse(rawData);
     
     if (!parsed.success) {
@@ -50,18 +67,15 @@ export async function POST(req: NextRequest) {
 
     const { title, cover_url, download_links, requeriments, description, platform } = parsed.data;
 
-    // Recuperamos los valores finales (si Zod no los tiene, usamos los de arriba)
     const finalPassword = "password" in parsed.data ? (parsed.data as any).password : password;
     const finalInstructions = "instructions" in parsed.data ? (parsed.data as any).instructions : instructions;
     const finalCaptura = "captura" in parsed.data ? (parsed.data as any).captura : captura;
     const finalFileSize = "fileSize" in parsed.data ? (parsed.data as any).fileSize : fileSize;
     const finalVersion = "version" in parsed.data ? (parsed.data as any).version : version;
     const finalCreditSource = "creditSource" in parsed.data ? (parsed.data as any).creditSource : creditSource;
-    
-    // --- VALOR FINAL DE REQUISITOS ---
     const finalReqMinimos = "reqMinimos" in parsed.data ? (parsed.data as any).reqMinimos : reqMinimos;
-    // ---------------------------------
 
+    // 💾 3. GUARDAMOS EL JUEGO CON SU ESTADO Y AUTOR
     const result = await db.insert(games).values({
       platform,
       title,
@@ -75,12 +89,13 @@ export async function POST(req: NextRequest) {
       content: description,
       password: finalPassword || null,
       instructions: finalInstructions || null,
+      status: gameStatus, // 🟢 o 🟡
+      uploader: uploaderName, // Ej: "Hamza"
     }).returning();
 
     const gameId = result[0]?.id;
 
     if (gameId) {
-      // Insertar enlaces
       if (download_links && download_links.length > 0) {
         await db.insert(linksDescarga).values(
           download_links.map((link: any) => ({
@@ -92,7 +107,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Insertar géneros
       if (genres && genres.length > 0) {
         await db.insert(gamesGenres).values(
           genres.map((genre) => ({
@@ -102,19 +116,21 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // 🌟 AUTO-NOTICIA AL CREAR JUEGO
-      try {
-        await db.insert(news).values({
-          title: `🎮 ¡Nuevo juego disponible: ${title}!`,
-          content: `Hemos subido **${title}** para la plataforma ${platform}. ¡Ya puedes ir a la sección de descargas!`,
-          type: 'game'
-        });
-      } catch (e) {
-        console.error("Fallo al crear la auto-noticia:", e);
-      }
+      // 📢 4. ACCIONES EXCLUSIVAS DEL ADMIN
+      // Solo avisamos a la web pública si el juego se ha aprobado (lo sube el Admin)
+      if (isAdmin) {
+        try {
+          await db.insert(news).values({
+            title: `🎮 ¡Nuevo juego disponible: ${title}!`,
+            content: `Hemos subido **${title}** para la plataforma ${platform}. ¡Ya puedes ir a la sección de descargas!`,
+            type: 'game'
+          });
+        } catch (e) {
+          console.error("Fallo al crear la auto-noticia:", e);
+        }
 
-      // 🚀 AVISAR A CLOUDFLARE PARA REDEPLOY
-      fetch(CF_WEBHOOK, { method: 'POST' }).catch(console.error);
+        fetch(CF_WEBHOOK, { method: 'POST' }).catch(console.error);
+      }
     }
 
     return NextResponse.json({ error: null });

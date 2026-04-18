@@ -18,6 +18,11 @@ export const games = sqliteTable('games', {
   version: text('version'),
   creditSource: text('creditSource'),
   password: text('password'),
+  
+  // 🔥 NUEVOS CAMPOS: SISTEMA DE AYUDANTES Y LIMBO
+  status: text('status').default('pending').notNull(), // Puede ser: 'pending', 'approved', 'rejected'
+  uploader: text('uploader').default('Admin').notNull(), // Guardará 'Benslay', 'Admin', etc.
+
   createdAt: integer('createdAt', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer('updatedAt', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()).$onUpdate(() => new Date()).notNull(),
   isAudited: integer('isAudited', { mode: 'boolean' }).default(false).notNull(),
@@ -25,6 +30,8 @@ export const games = sqliteTable('games', {
   // 🔥 ÍNDICES MÁGICOS QUE REDUCEN LAS LECTURAS UN 99%
   slugIdx: uniqueIndex('slug_idx').on(table.slug),
   createdIdx: index('created_at_idx').on(table.createdAt),
+  // Índice extra para que buscar los pendientes sea ultra rápido
+  statusIdx: index('status_idx').on(table.status),
 }));
 
 // 2. TABLA: links_descarga
