@@ -64,7 +64,7 @@ export default async function MisAportesPage() {
           {misJuegos.length === 0 ? (
             <div className="bg-white rounded-[2rem] p-20 border border-dashed border-[#dfb4b9] flex flex-col items-center justify-center text-center">
               <Gamepad2 size={48} className="text-[#dfb4b9] mb-4 opacity-50" />
-              <p className="text-[#a87ca0] font-bold">Aún no has subio ningún juego.</p>
+              <p className="text-[#a87ca0] font-bold">Aún no has subido ningún juego.</p>
               <Link href="/panel/new-game" className="mt-4 text-[#9b62a6] font-black uppercase text-xs underline">
                 Subir mi primer juego
               </Link>
@@ -97,31 +97,44 @@ export default async function MisAportesPage() {
                 {/* SEMÁFORO DE ESTADO */}
                 <div className="flex flex-wrap justify-center gap-3">
                   {juego.status === 'pending' && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-full border border-amber-100 h-fit">
                       <Clock size={16} />
                       <span className="text-[10px] font-black uppercase tracking-wider">Pendiente</span>
                     </div>
                   )}
+                  
                   {juego.status === 'approved' && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 h-fit">
                       <CheckCircle2 size={16} />
                       <span className="text-[10px] font-black uppercase tracking-wider">Aprobado</span>
                     </div>
                   )}
+                  
+                  {/* 🔥 BLOQUE MODIFICADO: Rechazado + Motivo */}
                   {juego.status === 'rejected' && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-full border border-rose-100">
-                      <XCircle size={16} />
-                      <span className="text-[10px] font-black uppercase tracking-wider">Rechazado</span>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-full border border-rose-100 w-fit">
+                        <XCircle size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-wider">Rechazado</span>
+                      </div>
+                      
+                      {/* Si el admin escribió un motivo, se lo enseñamos */}
+                      {juego.rejectReason && (
+                        <div className="bg-white border border-rose-200 text-rose-600 text-[10px] p-3 rounded-xl shadow-sm max-w-[250px] text-right">
+                          <strong className="font-black block uppercase tracking-widest mb-1 text-rose-400 text-[9px]">Motivo del rechazo:</strong>
+                          <span className="font-medium leading-tight block">{juego.rejectReason}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
 
                 {/* BOTONES DE ACCIÓN */}
                 <div className="flex gap-2">
-                  {/* Botón Corregir / Editar */}
+                  {/* 🔥 BOTÓN CORREGIR ARREGLADO */}
                   <Link 
-                    href={`/panel/editor/${juego.id}`}
-                    className="flex items-center gap-2 px-5 py-3 bg-[#f8f5f5] hover:bg-[#9b62a6] hover:text-white text-[#9b62a6] rounded-2xl transition-all duration-200 group"
+                    href={`/panel/editor?letra=${juego.title.charAt(0).toUpperCase()}&gameId=${juego.id}`}
+                    className="flex items-center gap-2 px-5 py-3 bg-[#f8f5f5] hover:bg-[#9b62a6] hover:text-white text-[#9b62a6] rounded-2xl transition-all duration-200 group h-fit"
                   >
                     <Edit3 size={18} className="group-hover:rotate-12 transition-transform" />
                     <span className="text-xs font-black uppercase tracking-widest">Corregir</span>
@@ -130,9 +143,9 @@ export default async function MisAportesPage() {
                   {/* Link a la web si ya está aprobado */}
                   {juego.status === 'approved' && (
                     <Link 
-                      href={`/games/${juego.slug}`}
+                      href={`https://tuwebprincipal.com/game/${juego.slug}`} /* <-- Asegúrate de que esta URL sea la correcta de tu web pública */
                       target="_blank"
-                      className="p-3 bg-white border border-[#dfb4b9]/50 text-[#a87ca0] hover:text-[#9b62a6] rounded-2xl transition-colors"
+                      className="p-3 bg-white border border-[#dfb4b9]/50 text-[#a87ca0] hover:text-[#9b62a6] rounded-2xl transition-colors h-fit"
                     >
                       <ExternalLink size={20} />
                     </Link>
