@@ -1,10 +1,14 @@
 import { db } from "@/lib/db";
 import { games, news } from "@/lib/schema";
 import { desc, eq } from "drizzle-orm";
-// 🔥 Importamos la lavadora de enlaces
 import { cleanSlug } from "@/lib/slugify";
+// 🔥 IMPORTAMOS EL MATA-CACHÉ AQUÍ ARRIBA
+import { unstable_noStore as noStore } from "next/cache"; 
 
 export async function getMixedNotifications() {
+  // 🔥 EJECUTAMOS EL MATA-CACHÉ (Obliga a leer la BD en tiempo real)
+  noStore(); 
+
   // 1. Traemos los 20 juegos MÁS NUEVOS (Recién subidos)
   const newGames = await db.select({ 
     id: games.id, 
@@ -55,18 +59,17 @@ export async function getMixedNotifications() {
       title: `Nuevo juego: ${g.title}`,
       description: "¡Ya disponible en el catálogo para descargar!",
       date: g.createdAt,
-      type: "game", // <--- Tu frontend usará esto para poner el icono del mando
+      type: "game", 
       url: `/game/${slug}/${g.id}`
     });
   });
 
   // B. Eventos de Juegos ACTUALIZADOS
   updatedGames.forEach((g) => {
-    // 🔥 TRUCO: Solo lo marcamos como "Actualizado" si la fecha de actualización 
-    // es por lo menos 1 minuto mayor a la de creación (para evitar duplicados al subir por primera vez)
     const createdTime = new Date(g.createdAt).getTime();
     const updatedTime = new Date(g.updatedAt).getTime();
     
+    // Si la actualización es al menos 1 minuto después de la creación
     if (updatedTime - createdTime > 60000) { 
       let slug = cleanSlug(g.slug || g.title || "juego");
       if (!slug.endsWith('-descargar-gratis')) slug += '-descargar-gratis';
@@ -75,8 +78,8 @@ export async function getMixedNotifications() {
         id: `game-upd-${g.id}`,
         title: `Juego actualizado: ${g.title}`,
         description: "¡Se han actualizado los enlaces o detalles de este juego!",
-        date: g.updatedAt, // <--- Usamos la fecha de la actualización
-        type: "update", // <--- Puedes usar "update" en tu frontend para poner un icono de unas flechas 🔄
+        date: g.updatedAt, 
+        type: "update", 
         url: `/game/${slug}/${g.id}`
       });
     }
