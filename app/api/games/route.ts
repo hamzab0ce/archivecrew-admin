@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { games, linksDescarga, gamesGenres, news } from "@/lib/schema";
+import { games, linksDescarga, gamesGenres } from "@/lib/schema"; // 🔥 Quitamos 'news' de aquí
 import { createGameSchema } from "@/lib/validators/game";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -117,18 +117,8 @@ export async function POST(req: NextRequest) {
       }
 
       // 📢 4. ACCIONES EXCLUSIVAS DEL ADMIN
-      // Solo avisamos a la web pública si el juego se ha aprobado (lo sube el Admin)
       if (isAdmin) {
-        try {
-          await db.insert(news).values({
-            title: `🎮 ¡Nuevo juego disponible: ${title}!`,
-            content: `Hemos subido **${title}** para la plataforma ${platform}. ¡Ya puedes ir a la sección de descargas!`,
-            type: 'game'
-          });
-        } catch (e) {
-          console.error("Fallo al crear la auto-noticia:", e);
-        }
-
+        // 🔥 Solo disparamos el webhook. La campana ya leerá el juego nuevo directamente de la base de datos.
         fetch(CF_WEBHOOK, { method: 'POST' }).catch(console.error);
       }
     }

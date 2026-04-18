@@ -2,13 +2,8 @@ import { db } from "@/lib/db";
 import { games, news } from "@/lib/schema";
 import { desc, eq } from "drizzle-orm";
 import { cleanSlug } from "@/lib/slugify";
-// 🔥 IMPORTAMOS EL MATA-CACHÉ AQUÍ ARRIBA
-import { unstable_noStore as noStore } from "next/cache"; 
 
 export async function getMixedNotifications() {
-  // 🔥 EJECUTAMOS EL MATA-CACHÉ (Obliga a leer la BD en tiempo real)
-  noStore(); 
-
   // 1. Traemos los 20 juegos MÁS NUEVOS (Recién subidos)
   const newGames = await db.select({ 
     id: games.id, 
@@ -69,8 +64,8 @@ export async function getMixedNotifications() {
     const createdTime = new Date(g.createdAt).getTime();
     const updatedTime = new Date(g.updatedAt).getTime();
     
-    // Si la actualización es al menos 1 minuto después de la creación
-    if (updatedTime - createdTime > 60000) { 
+    // 🔥 EL FILTRO ANTI-SPAM AL MÍNIMO: Si la fecha de actualización es mayor que la de creación, AVISA.
+    if (updatedTime > createdTime) { 
       let slug = cleanSlug(g.slug || g.title || "juego");
       if (!slug.endsWith('-descargar-gratis')) slug += '-descargar-gratis';
 

@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db'
-import { games } from '@/lib/schema'
+import { games, news } from '@/lib/schema' // 🔥 Añadido 'news'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
@@ -9,13 +9,28 @@ const CF_WEBHOOK = "https://api.cloudflare.com/client/v4/pages/webhooks/deploy_h
 
 export async function approveGame(id: number) {
   try {
+    // 1. Buscamos el título del juego para la notificación
+    const juego = await db.query.games.findFirst({
+      where: eq(games.id, id),
+    });
+
+    if (!juego) return { success: false, message: 'Juego no encontrado' };
+
+    // 2. Lo aprobamos
     await db.update(games).set({ 
       status: 'approved',
       rejectReason: null,
       updatedAt: new Date() 
     }).where(eq(games.id, id));
 
-    // Despliega los cambios a todo el mundo
+    // 3. 🔥 CREAMOS LA NOTIFICACIÓN DE NUEVO JUEGO
+    await db.insert(news).values({
+      title: `Nuevo juego: ${juego.title}`,
+      content: '¡Ya disponible en el catálogo para descargar!',
+      type: 'new'
+    });
+
+    // 4. Despliega los cambios a todo el mundo
     fetch(CF_WEBHOOK, { method: 'POST' }).catch(console.error);
 
     revalidatePath('/panel/pendientes');
