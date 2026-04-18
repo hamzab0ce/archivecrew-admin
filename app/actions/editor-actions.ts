@@ -25,6 +25,14 @@ export async function updateGame(id: number, formData: FormData) {
   const { role, username } = await getUserData();
   const isAdmin = role === 'admin';
 
+  // 1. OBTENER EL JUEGO ACTUAL PARA COMPARAR
+  const currentGame = await db.query.games.findFirst({
+    where: eq(games.id, id),
+    with: { linksDescarga: true, gamesGenres: true }
+  });
+
+  if (!currentGame) return { success: false, message: 'Juego no encontrado' };
+
   const title = formData.get('title') as string;
   const cover_url = formData.get('cover_url') as string;
   const content = formData.get('content') as string;
@@ -38,10 +46,39 @@ export async function updateGame(id: number, formData: FormData) {
   const instructions = formData.get('instructions') as string;
   const reqMinimos = formData.get('reqMinimos') as string;
 
+  // 🔥 LÓGICA DEL CHIVATO VISUAL: Comparación a prueba de fallos (ignora nulls, espacios y saltos de línea)
+  const safeStr = (val: string | null | undefined) => (val || '').trim().replace(/\r\n/g, '\n');
+
+  let changedFields: string[] = [];
+  if (safeStr(title) !== safeStr(currentGame.title)) changedFields.push('title');
+  if (safeStr(cover_url) !== safeStr(currentGame.cover_url)) changedFields.push('cover_url');
+  if (safeStr(content) !== safeStr(currentGame.content)) changedFields.push('content');
+  if (safeStr(captura) !== safeStr(currentGame.captura)) changedFields.push('captura');
+  if (safeStr(platform) !== safeStr(currentGame.platform)) changedFields.push('platform');
+  if (safeStr(requeriments) !== safeStr(currentGame.requeriments)) changedFields.push('requeriments');
+  if (safeStr(reqMinimos) !== safeStr(currentGame.reqMinimos)) changedFields.push('reqMinimos');
+  if (safeStr(fileSize) !== safeStr(currentGame.fileSize)) changedFields.push('fileSize');
+  if (safeStr(version) !== safeStr(currentGame.version)) changedFields.push('version');
+  if (safeStr(password) !== safeStr(currentGame.password)) changedFields.push('password');
+  if (safeStr(creditSource) !== safeStr(currentGame.creditSource)) changedFields.push('creditSource');
+  if (safeStr(instructions) !== safeStr(currentGame.instructions)) changedFields.push('instructions');
+
   let linksList: any[] = [];
   try {
     const linksRaw = formData.get('links_json') as string;
     if (linksRaw) linksList = JSON.parse(linksRaw);
+    
+    // Comparar links de forma segura (normalizamos los enlaces del form antes de comparar)
+    const dbLinks = (currentGame.linksDescarga || []).map(l => l.link.trim().toLowerCase()).sort().join(',');
+    const formLinks = linksList.map(l => {
+      let finalUrl = l.link.trim().toLowerCase();
+      if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://') && finalUrl !== "") {
+        finalUrl = `https://${finalUrl}`;
+      }
+      return finalUrl;
+    }).sort().join(',');
+
+    if (formLinks !== dbLinks) changedFields.push('links');
   } catch (e) { console.error("Error parseando enlaces", e); }
 
   if (linksList.length === 0) {
@@ -50,14 +87,18 @@ export async function updateGame(id: number, formData: FormData) {
 
   const rawGenres = formData.getAll('genres');
   let genresList: string[] = [];
-  
   if (rawGenres.length > 0) {
     genresList = rawGenres.flatMap(g => g.toString().split(',')).map(g => g.trim()).filter(Boolean);
   } else {
     const singleGenreRaw = formData.get('genres') as string;
-    if (singleGenreRaw) {
-      genresList = singleGenreRaw.split(',').map(g => g.trim()).filter(Boolean);
-    }
+    if (singleGenreRaw) genresList = singleGenreRaw.split(',').map(g => g.trim()).filter(Boolean);
+  }
+  
+  // Comparar géneros ignorando mayúsculas/minúsculas
+  const dbGenres = (currentGame.gamesGenres?.map(g => g.genre) || []).map(g => (g || '').toUpperCase().trim()).sort().join(',');
+  const formGenres = genresList.map(g => g.toUpperCase().trim()).sort().join(',');
+  if (formGenres !== dbGenres) {
+    changedFields.push('genres');
   }
 
   try {
@@ -66,12 +107,13 @@ export async function updateGame(id: number, formData: FormData) {
       fileSize, version, password, creditSource, instructions, updatedAt: new Date(),
       status: isAdmin ? 'approved' : 'pending',
       uploader: username,
-      rejectReason: null
+      rejectReason: null,
+      // 🔥 GUARDAMOS LA LISTA DE CAMBIOS (si es admin y aprueba, la vaciamos)
+      modifiedFields: isAdmin ? null : JSON.stringify(changedFields)
     }).where(eq(games.id, id));
 
     await db.delete(linksDescarga).where(eq(linksDescarga.juego_id, id));
     
-    // 🔥 INSERCIÓN BLINDADA EXACTAMENTE COMO TU BD REQUIERE
     await db.insert(linksDescarga).values(
       linksList.map((link, index) => {
         let finalUrl = link.link.trim();
@@ -99,9 +141,9 @@ export async function updateGame(id: number, formData: FormData) {
     revalidatePath('/'); revalidatePath('/panel/editor');
     revalidatePath('/panel/mis-aportes'); revalidatePath('/panel/pendientes');
     
-    return { success: true, message: isAdmin ? '✅ Juego actualizado y publicado' : '✅ Corrección enviada a revisión. ¡Gracias!' };
+    return { success: true, message: isAdmin ? '✅ Publicado y registro de cambios limpio' : '✅ Cambios registrados para revisión' };
   } catch (error) {
-    return { success: false, message: '❌ Error al actualizar la base de datos' };
+    return { success: false, message: '❌ Error en la base de datos' };
   }
 }
 

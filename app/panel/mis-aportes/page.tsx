@@ -110,7 +110,6 @@ export default async function MisAportesPage() {
                     </div>
                   )}
                   
-                  {/* 🔥 BLOQUE MODIFICADO: Rechazado + Motivo */}
                   {juego.status === 'rejected' && (
                     <div className="flex flex-col items-end gap-2">
                       <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-full border border-rose-100 w-fit">
@@ -131,24 +130,26 @@ export default async function MisAportesPage() {
 
                 {/* BOTONES DE ACCIÓN */}
                 <div className="flex gap-2">
-                  {/* 🔥 BOTÓN CORREGIR ARREGLADO */}
-                  <Link 
-                    href={`/panel/editor?letra=${juego.title.charAt(0).toUpperCase()}&gameId=${juego.id}`}
-                    className="flex items-center gap-2 px-5 py-3 bg-[#f8f5f5] hover:bg-[#9b62a6] hover:text-white text-[#9b62a6] rounded-2xl transition-all duration-200 group h-fit"
-                  >
-                    <Edit3 size={18} className="group-hover:rotate-12 transition-transform" />
-                    <span className="text-xs font-black uppercase tracking-widest">Corregir</span>
-                  </Link>
+                  {/* 🔥 BOTÓN CORREGIR: Oculto si está aprobado */}
+                  {juego.status !== 'approved' && (
+                    <Link 
+                      href={`/panel/editor?letra=${juego.title.charAt(0).toUpperCase()}&gameId=${juego.id}`}
+                      className="flex items-center gap-2 px-5 py-3 bg-[#f8f5f5] hover:bg-[#9b62a6] hover:text-white text-[#9b62a6] rounded-2xl transition-all duration-200 group h-fit"
+                    >
+                      <Edit3 size={18} className="group-hover:rotate-12 transition-transform" />
+                      <span className="text-xs font-black uppercase tracking-widest">Corregir</span>
+                    </Link>
+                  )}
                   
-                  {/* Link a la web si ya está aprobado */}
+                  {/* 🔥 ENLACE EXTERNO: Construido con el slug arreglado */}
                   {juego.status === 'approved' && (
                     <Link 
-  href={`https://archivecrew.xyz/game/${juego.slug}/${juego.id}`} 
-  target="_blank"
-  className="p-3 bg-white border border-[#dfb4b9]/50 text-[#a87ca0] hover:text-[#9b62a6] rounded-2xl transition-colors h-fit"
->
-  <ExternalLink size={20} />
-</Link>
+                      href={`https://archivecrew.xyz/game/${juego.slug}-descargar-gratis/${juego.id}`} 
+                      target="_blank"
+                      className="p-3 bg-white border border-[#dfb4b9]/50 text-[#a87ca0] hover:text-[#9b62a6] rounded-2xl transition-colors h-fit"
+                    >
+                      <ExternalLink size={20} />
+                    </Link>
                   )}
                 </div>
               </div>

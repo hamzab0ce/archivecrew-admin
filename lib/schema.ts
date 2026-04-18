@@ -19,10 +19,13 @@ export const games = sqliteTable('games', {
   creditSource: text('creditSource'),
   password: text('password'),
   
-  // 🔥 NUEVOS CAMPOS: SISTEMA DE AYUDANTES Y LIMBO
+  // 🔥 CAMPOS: SISTEMA DE AYUDANTES Y LIMBO
   status: text('status').default('pending').notNull(), // Puede ser: 'pending', 'approved', 'rejected'
   uploader: text('uploader').default('Admin').notNull(), // Guardará 'Benslay', 'Admin', etc.
-  rejectReason: text('reject_reason'), // 🔥 CAMPO NUEVO PARA EL MOTIVO DE RECHAZO
+  rejectReason: text('reject_reason'), // MOTIVO DE RECHAZO
+  
+  // 🟢 EL CHIVATO VISUAL: Guarda los campos que el ayudante ha modificado
+  modifiedFields: text('modified_fields'),
 
   createdAt: integer('createdAt', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer('updatedAt', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()).$onUpdate(() => new Date()).notNull(),
